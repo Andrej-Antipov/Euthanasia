@@ -52,6 +52,20 @@ GO_TO_BED(){
 echo "${mypassword}" | sudo -S pmset sleepnow
 }
 
+CHECK_DISPLAY(){ 
+echo "${mypassword}" | sudo -S ioreg -n IODisplayWrangler | grep -i IOPower | tr -d '"{|}' | rev | cut -f1 -d',' | rev | cut -f2 -d= 
+}
+
+SLEEP_TIMER(){
+if [[ ! ${timer} = ${display} ]]; then 
+    for ((i=0;i<(( ($system-$display)*4));i++))
+    do
+    sleep 15
+    if [[ $( CHECK_DISPLAY ) = 4 ]]; then break; fi
+    done
+fi
+}
+
 
 # INIT
 cd "$(dirname "$0")"; ROOT="$(dirname "$0")"
@@ -83,12 +97,8 @@ while true
     do  
         sleep 14
         GET_POWER_SETTINGS
-         if [[ ! ${system} = 0 ]]; then
-            if [[ ${timer} = ${display} ]] && [[ ! $( echo "${mypassword}" | sudo -S ioreg -n IODisplayWrangler | grep -i IOPower | tr -d '"{|}' | rev | cut -f1 -d',' | rev | cut -f2 -d= ) = 4 ]]; then
-                KILL_HAZARDS; GO_TO_BED 
-            else
-                if [[ ! $( echo "${mypassword}" | sudo -S ioreg -n IODisplayWrangler | grep -i IOPower | tr -d '"{|}' | rev | cut -f1 -d',' | rev | cut -f2 -d= ) = 4 ]]; then KILL_HAZARDS; sleep ${timer}; GO_TO_BED; fi 2>/dev/null
-            fi
+         if [[ ! ${system} = 0 ]]; then        
+            if [[ ! $( CHECK_DISPLAY ) = 4 ]]; then KILL_HAZARDS; SLEEP_TIMER; if [[ ! $( CHECK_DISPLAY ) = 4 ]]; then GO_TO_BED; fi; fi
         fi
     done
 
