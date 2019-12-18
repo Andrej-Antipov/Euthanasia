@@ -299,6 +299,7 @@ do
 printf '\e[3J' && printf "\033[0;0H" 
 printf "\033[?25l"
 SHOW_MENU
+osascript -e 'tell application "Terminal" to activate'
 #SET_INPUT
 GET_INPUT
 
@@ -319,6 +320,7 @@ if [[ ! "${mypassword}" = "0" ]]; then
                 sudo plutil -remove ProgramArguments.0 /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
                 sudo plutil -insert ProgramArguments.0 -string "/Users/$(whoami)/Library/Application Support/Euthanasia/.Euthanasia.sh" /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
                 if [[ ! -d ~/Library/Application\ Support/Euthanasia ]]; then mkdir ~/Library/Application\ Support/Euthanasia ; fi
+#               cp -a tools/terminal-notifier.app ~/Library/Application\ Support/Euthanasia
                 if [[ ! -f ~/Library/Application\ Support/Euthanasia/.Euthanasia.sh ]]; then cp -a tools/Euthanasia.sh ~/Library/Application\ Support/Euthanasia/.Euthanasia.sh; sudo chmod u+x ~/Library/Application\ Support/Euthanasia/.Euthanasia.sh; fi 2>/dev/null
                 if [[ ! $rs_lan = "работает" ]]; then sudo launchctl load -w /System/Library/LaunchDaemons/Euthanasia.plist; fi 2>/dev/null
                 cp AppIcon.icns ~/Library/Application\ Support/Euthanasia/.EuthIcon.icns; echo "ru" >> ~/Library/Application\ Support/Euthanasia/.SleeperLang.txt
