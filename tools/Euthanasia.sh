@@ -1,14 +1,20 @@
 
 # FUNCS
 
+MESSAGE_START(){
+if [[ $loc = "ru" ]]; then
+if result=$( osascript -e 'Tell application "System Events" to display dialog "       Сервис усыпления компа запущен " '"${icon_string}"' buttons "OK" giving up after 3'  2>/dev/null ); then cancel="OK"; else cancel="NOT OK"; fi
+else
+if result=$( osascript -e 'Tell application "System Events" to display dialog "       Eutanasia service started " '"${icon_string}"' buttons "OK" giving up after 3'  2>/dev/null ); then cancel="OK"; else cancel="NOT OK"; fi
+fi
+}
+
 KILL_HAZARDS(){
 if [[ "${gpu}" = "AMD" ]] && [[ "$macos" = "1015" ]]; then 
     if [[ ! "${danger_applet}" = "no" ]]; then
         AMDAccel=$( ioreg -c AMDRadeonX4000_AMDAccelDevice  -r | grep IOUserClientCreator )
         TV_pid=$( echo "${AMDAccel}" | grep TV -m 1 | cut -f2 -d= | cut -c 7- | cut -f1 -d ',' )
         Safari_pid=$( echo "${AMDAccel}" | grep Safari -m 1 | cut -f2 -d= | cut -c 7- | cut -f1 -d ',' )
-        #if [[ ! ${TV_pid} = "" ]]; then echo "${mypassword}" | sudo -S kill ${TV_pid}; fi
-        #if [[ ! ${Safari_pid} = "" ]]; then echo "${mypassword}" | sudo -S kill ${Safari_pid}; fi
         if [[ ! ${TV_pid} = "" ]]; then echo "${mypassword}" | sudo -S osascript -e 'quit app "TV.app"'; fi
         if [[ "${danger_applet}" = "safari" ]]; then
             if [[ ! ${Safari_pid} = "" ]]; then echo "${mypassword}" | sudo -S osascript -e 'quit app "Safari.app"'; fi
@@ -17,24 +23,15 @@ if [[ "${gpu}" = "AMD" ]] && [[ "$macos" = "1015" ]]; then
 fi
 }
 
-DBG(){
-echo "" >>  /Users/andrej/Desktop/test.txt
-date +%T >>  /Users/andrej/Desktop/test.txt
-echo "LOG = "$1  >>  /Users/andrej/Desktop/test.txt
-echo "GET_POWER_SETTING timeout_limit     = "${timeout_limit} >>  /Users/andrej/Desktop/test.txt
-echo "GET_POWER_SETTING system            = "${system} >>  /Users/andrej/Desktop/test.txt
-echo "" >>  /Users/andrej/Desktop/test.txt
-echo "danger_applet = ""${danger_applet}"  >>  /Users/andrej/Desktop/test.txt
-}
-
 GET_POWER_SETTINGS(){
 if [[ "$( pmset -g batt | grep -o "AC Power" )" = "" ]]; then power="Battery"; else power="AC"; fi
 check=$( plutil -p /Library/Preferences/com.apple.PowerManagement.plist | tr -d '>"}{' | grep ${power} -A7)
     display=$( echo "$check" | grep -m 1 "Display Sleep Timer" | cut -f2 -d '=' | xargs )
     system=$( echo "$check" | grep -m 1 "System Sleep Timer" | cut -f2 -d '=' | xargs )
+    if [[ ! ${system} = 0 ]]; then 
     if [[ ${display} -gt ${system} ]]; then display=${system}; fi
-    let "system=(system-display)*60"
-#DBG "первый"
+    let "timer=(system-display)*60"
+    fi
 }
 
 GET_USER_PASSWORD(){
@@ -52,9 +49,21 @@ fi
 }
 
 GO_TO_BED(){
-#DBG "второй"
-KILL_HAZARDS
 echo "${mypassword}" | sudo -S pmset sleepnow
+}
+
+CHECK_DISPLAY(){ 
+echo "${mypassword}" | sudo -S ioreg -n IODisplayWrangler | grep -i IOPower | tr -d '"{|}' | rev | cut -f1 -d',' | rev | cut -f2 -d= 
+}
+
+SLEEP_TIMER(){
+if [[ ! ${timer} = ${display} ]]; then 
+    for ((i=0;i<(( ($system-$display)*4));i++))
+    do
+    sleep 15
+    if [[ $( CHECK_DISPLAY ) = 4 ]]; then break; fi
+    done
+fi
 }
 
 
@@ -64,12 +73,6 @@ GET_APP_ICON
 loc=$( cat .SleeperLang.txt)
 if [[ ! $loc = "ru" ]]; then loc="en"; fi 
 GET_USER_PASSWORD
-
-if [[ $loc = "ru" ]]; then
-echo "${mypassword}" | sudo -S osascript -e 'Tell application "System Events" to display dialog "       Сервис усыпления компа запущен " '"${icon_string}"' buttons "OK" giving up after 3'  2>/dev/null
-else
-echo "${mypassword}" | sudo -S osascript -e 'Tell application "System Events" to display dialog "       Eutanasia service started " '"${icon_string}"' buttons "OK" giving up after 3'  2>/dev/null
-fi
 
 if [[ ! $( system_profiler SPDisplaysDataType | grep Vendor | grep AMD ) = "" ]]; then gpu="AMD"; else gpu="Other"; fi
 
@@ -85,20 +88,19 @@ case ${shikigva} in
 *   )  danger_applet="no"
 esac
 
-DBG "второй"
+MESSAGE_START
+
+if [[ "${cancel}" = "NOT OK" ]]; then sleep 1; MESSAGE_START; fi
+
+osascript -e 'tell application "Terminal" to activate'
 
 # MAIN
 while true
     do  
         sleep 14
         GET_POWER_SETTINGS
-        
-         if [[ ${system} = ${display} ]] && [[ ! $( echo "${mypassword}" | sudo -S ioreg -n IODisplayWrangler | grep -i IOPower | tr -d '"{|}' | rev | cut -f1 -d',' | rev | cut -f2 -d= ) = 4 ]]; then
-                GO_TO_BED 
-         else
-            if [[ ! $( echo "${mypassword}" | sudo -S ioreg -n IODisplayWrangler | grep -i IOPower | tr -d '"{|}' | rev | cut -f1 -d',' | rev | cut -f2 -d= ) = 4 ]]; then KILL_HAZARDS; fi
-            sleep ${system}
-            if [[ ! $( echo "${mypassword}" | sudo -S ioreg -n IODisplayWrangler | grep -i IOPower | tr -d '"{|}' | rev | cut -f1 -d',' | rev | cut -f2 -d= ) = 4 ]]; then GO_TO_BED; fi 2>/dev/null
-         fi
+         if [[ ! ${system} = 0 ]]; then        
+            if [[ ! $( CHECK_DISPLAY ) = 4 ]]; then KILL_HAZARDS; SLEEP_TIMER; if [[ ! $( CHECK_DISPLAY ) = 4 ]]; then GO_TO_BED; fi; fi
+        fi
     done
 
