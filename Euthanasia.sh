@@ -1,6 +1,14 @@
 
 # FUNCS
 
+MESSAGE_START(){
+if [[ $loc = "ru" ]]; then
+if result=$( osascript -e 'Tell application "System Events" to display dialog "       Сервис усыпления компа запущен " '"${icon_string}"' buttons "OK" giving up after 3'  2>/dev/null ); then cancel="OK"; else cancel="NOT OK"; fi
+else
+if result=$( osascript -e 'Tell application "System Events" to display dialog "       Eutanasia service started " '"${icon_string}"' buttons "OK" giving up after 3'  2>/dev/null ); then cancel="OK"; else cancel="NOT OK"; fi
+fi
+}
+
 KILL_HAZARDS(){
 if [[ "${gpu}" = "AMD" ]] && [[ "$macos" = "1015" ]]; then 
     if [[ ! "${danger_applet}" = "no" ]]; then
@@ -20,8 +28,10 @@ if [[ "$( pmset -g batt | grep -o "AC Power" )" = "" ]]; then power="Battery"; e
 check=$( plutil -p /Library/Preferences/com.apple.PowerManagement.plist | tr -d '>"}{' | grep ${power} -A7)
     display=$( echo "$check" | grep -m 1 "Display Sleep Timer" | cut -f2 -d '=' | xargs )
     system=$( echo "$check" | grep -m 1 "System Sleep Timer" | cut -f2 -d '=' | xargs )
+    if [[ ! ${system} = 0 ]]; then 
     if [[ ${display} -gt ${system} ]]; then display=${system}; fi
-    let "system=(system-display)*60"
+    let "timer=(system-display)*60"
+    fi
 }
 
 GET_USER_PASSWORD(){
@@ -64,22 +74,21 @@ case ${shikigva} in
 *   )  danger_applet="no"
 esac
 
-if [[ $loc = "ru" ]]; then
-osascript -e 'Tell application "System Events" to display dialog "       Сервис усыпления компа запущен " '"${icon_string}"' buttons "OK" giving up after 3'  2>/dev/null
-else
-osascript -e 'Tell application "System Events" to display dialog "       Eutanasia service started " '"${icon_string}"' buttons "OK" giving up after 3'  2>/dev/null
-fi
+MESSAGE_START
+
+if [[ "${cancel}" = "NOT OK" ]]; then sleep 1; MESSAGE_START; fi
 
 # MAIN
 while true
     do  
         sleep 14
         GET_POWER_SETTINGS
-        
-         if [[ ${system} = ${display} ]] && [[ ! $( echo "${mypassword}" | sudo -S ioreg -n IODisplayWrangler | grep -i IOPower | tr -d '"{|}' | rev | cut -f1 -d',' | rev | cut -f2 -d= ) = 4 ]]; then
+         if [[ ! ${system} = 0 ]]; then
+            if [[ ${timer} = ${display} ]] && [[ ! $( echo "${mypassword}" | sudo -S ioreg -n IODisplayWrangler | grep -i IOPower | tr -d '"{|}' | rev | cut -f1 -d',' | rev | cut -f2 -d= ) = 4 ]]; then
                 KILL_HAZARDS; GO_TO_BED 
-         else
-            if [[ ! $( echo "${mypassword}" | sudo -S ioreg -n IODisplayWrangler | grep -i IOPower | tr -d '"{|}' | rev | cut -f1 -d',' | rev | cut -f2 -d= ) = 4 ]]; then KILL_HAZARDS; sleep ${system}; GO_TO_BED; fi 2>/dev/null
-         fi
+            else
+                if [[ ! $( echo "${mypassword}" | sudo -S ioreg -n IODisplayWrangler | grep -i IOPower | tr -d '"{|}' | rev | cut -f1 -d',' | rev | cut -f2 -d= ) = 4 ]]; then KILL_HAZARDS; sleep ${timer}; GO_TO_BED; fi 2>/dev/null
+            fi
+        fi
     done
 
