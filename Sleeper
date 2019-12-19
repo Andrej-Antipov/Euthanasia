@@ -139,7 +139,6 @@ fi
         fi
     fi
 fi
-osascript -e 'tell application "Terminal" to activate'
 }
 
 CLEAR_PLACE(){
@@ -190,6 +189,7 @@ fi
 
 GET_INPUT(){
 unset inputs
+old_rs_lan="${rs_lan}"
 SET_INPUT
 while [[ ! ${inputs} =~ ^[0-4qQa]+$ ]]; do
 printf "\033[?25l"
@@ -202,7 +202,12 @@ printf "%"80"s"'\n'"%"80"s"'\n'"%"80"s"'\n'"%"80"s"
 printf "\033[4A"
 printf "\r\033[46C"
 printf "\033[?25h"
-read -rsn1 -t1 inputs 
+CHECK_Euthanasia 2>/dev/null
+if [[ "${rs_lan}" = "${old_rs_lan}" ]]; then
+read -rsn1 -t2 inputs
+else 
+old_rs_lan="${rs_lan}"; inputs=0
+fi 
 printf "\r"
 done
 printf "\033[?25l"
@@ -210,8 +215,6 @@ printf "\033[?25l"
 }
 
 CHECK_Euthanasia(){
-
-ENTER_PASSWORD
 
 if [[ $loc = "ru" ]]; then
 if [[ $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then  rs_lan="работает"  
@@ -222,7 +225,7 @@ if [[ ! -f /System/Library/LaunchDaemons/Euthanasia.plist ]]; then rs_lan="не 
         fi 
 fi
 else
-if [[ $(echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job") ]]; then  rs_lan="started" 
+if [[ $(echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then  rs_lan="started" 
         else
 if [[ ! -f /System/Library/LaunchDaemons/Euthanasia.plist ]]; then rs_lan="not installed"
             else
@@ -301,11 +304,15 @@ printf "\033[?25l"
 SHOW_MENU
 osascript -e 'tell application "Terminal" to activate'
 #SET_INPUT
+ENTER_PASSWORD
 GET_INPUT
 
-ENTER_PASSWORD
-
 if [[ "$macos" = "1015" ]]; then sudo mount -uw / ; fi
+
+if [[ $inputs = 0 ]]; then
+            CLEAR_PLACE
+            CHECK_Euthanasia
+fi
 
 if [[ $inputs = 1 ]]; then
             CLEAR_PLACE
