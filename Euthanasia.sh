@@ -1,13 +1,6 @@
+#!/bin/bash
 
 # FUNCS
-
-MESSAGE_START(){
-if [[ $loc = "ru" ]]; then
-if result=$( osascript -e 'Tell application "System Events" to display dialog "       Сервис усыпления компа запущен " '"${icon_string}"' buttons "OK" giving up after 3'  2>/dev/null ); then cancel="OK"; else cancel="NOT OK"; fi
-else
-if result=$( osascript -e 'Tell application "System Events" to display dialog "       Eutanasia service started " '"${icon_string}"' buttons "OK" giving up after 3'  2>/dev/null ); then cancel="OK"; else cancel="NOT OK"; fi
-fi
-}
 
 KILL_HAZARDS(){
 if [[ "${gpu}" = "AMD" ]] && [[ "$macos" = "1015" ]]; then 
@@ -18,20 +11,23 @@ if [[ "${gpu}" = "AMD" ]] && [[ "$macos" = "1015" ]]; then
         if [[ ! ${TV_pid} = "" ]]; then echo "${mypassword}" | sudo -S osascript -e 'quit app "TV.app"'; fi
         if [[ "${danger_applet}" = "safari" ]]; then
             if [[ ! ${Safari_pid} = "" ]]; then echo "${mypassword}" | sudo -S osascript -e 'quit app "Safari.app"'; fi
+            echo "point 2" >> /Users/anton/Desktop/test.txt
         fi
     fi
 fi
 }
 
 GET_POWER_SETTINGS(){
-if [[ "$( pmset -g batt | grep -o "AC Power" )" = "" ]]; then power="Battery"; else power="AC"; fi
-check=$( plutil -p /Library/Preferences/com.apple.PowerManagement.plist | tr -d '>"}{' | grep ${power} -A7)
-    display=$( echo "$check" | grep -m 1 "Display Sleep Timer" | cut -f2 -d '=' | xargs )
-    system=$( echo "$check" | grep -m 1 "System Sleep Timer" | cut -f2 -d '=' | xargs )
+    display=$( pmset -g | grep displaysleep | awk '{print $NF}' )
+    system=$( pmset -g | tr -d ' ' | grep -ow 'sleep[0-9]*' | sed 's/[^0-9]//g' )
     if [[ ! ${system} = 0 ]]; then 
     if [[ ${display} -gt ${system} ]]; then display=${system}; fi
     let "timer=(system-display)*60"
     fi
+    echo "point 3" >> /Users/anton/Desktop/test.txt
+    echo "display "$display >> /Users/anton/Desktop/test.txt
+    echo "system  "$system >> /Users/anton/Desktop/test.txt
+    echo "timer   "$timer >> /Users/anton/Desktop/test.txt
 }
 
 GET_USER_PASSWORD(){
@@ -49,19 +45,23 @@ fi
 }
 
 GO_TO_BED(){
+echo "point 4" >> /Users/anton/Desktop/test.txt
 echo "${mypassword}" | sudo -S pmset sleepnow
 }
 
 CHECK_DISPLAY(){ 
-echo "${mypassword}" | sudo -S ioreg -n IODisplayWrangler | grep -i IOPower | tr -d '"{|}' | rev | cut -f1 -d',' | rev | cut -f2 -d= 
+pmset -g powerstate | grep -w IODisplayWrangler | xargs | cut -f2 -d' '
+echo "point display "$( pmset -g powerstate | grep -w IODisplayWrangler | xargs | cut -f2 -d' ') >> /Users/anton/Desktop/test.txt
 }
 
 SLEEP_TIMER(){
 if [[ ! ${timer} = ${display} ]]; then 
-    for ((i=0;i<(( ($system-$display)*4));i++))
+    for ((i=0;i<(( ($system-$display)*3));i++))
     do
-    sleep 15
-    if [[ $( CHECK_DISPLAY ) = 4 ]]; then break; fi
+    sleep 20
+    echo "************" >> /Users/anton/Desktop/test.txt
+    echo "point 1" >> /Users/anton/Desktop/test.txt
+    if [[ $( CHECK_DISPLAY ) = 4 ]]; then br=1; break; else br=0; fi
     done
 fi
 }
@@ -88,17 +88,20 @@ case ${shikigva} in
 *   )  danger_applet="no"
 esac
 
-MESSAGE_START
+echo "point S" >> /Users/anton/Desktop/test.txt
 
-if [[ "${cancel}" = "NOT OK" ]]; then sleep 1; MESSAGE_START; fi
+osascript -e 'tell application "Terminal" to activate'
 
 # MAIN
 while true
     do  
-        sleep 14
+        sleep 20
+        echo "***********" >> /Users/anton/Desktop/test.txt
+        echo "point 0" >> /Users/anton/Desktop/test.txt
         GET_POWER_SETTINGS
          if [[ ! ${system} = 0 ]]; then        
             if [[ ! $( CHECK_DISPLAY ) = 4 ]]; then KILL_HAZARDS; SLEEP_TIMER; if [[ ! $( CHECK_DISPLAY ) = 4 ]]; then GO_TO_BED; fi; fi
         fi
+        echo "point 5" >> /Users/anton/Desktop/test.txt
     done
 
