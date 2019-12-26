@@ -8,9 +8,9 @@ if [[ "${gpu}" = "AMD" ]] && [[ "$macos" = "1015" ]]; then
         AMDAccel=$( ioreg -c AMDRadeonX4000_AMDAccelDevice  -r | grep IOUserClientCreator )
         TV_pid=$( echo "${AMDAccel}" | grep TV -m 1 | cut -f2 -d= | cut -c 7- | cut -f1 -d ',' )
         Safari_pid=$( echo "${AMDAccel}" | grep Safari -m 1 | cut -f2 -d= | cut -c 7- | cut -f1 -d ',' )
-        if [[ ! ${TV_pid} = "" ]]; then echo "${mypassword}" | sudo -S osascript -e 'quit app "TV.app"'; fi
+        if [[ ! ${TV_pid} = "" ]]; then echo "${mypassword}" | sudo -Sk osascript -e 'quit app "TV.app"'; fi
         if [[ "${danger_applet}" = "safari" ]]; then
-            if [[ ! ${Safari_pid} = "" ]]; then echo "${mypassword}" | sudo -S osascript -e 'quit app "Safari.app"'; fi
+            if [[ ! ${Safari_pid} = "" ]]; then echo "${mypassword}" | sudo -Sk osascript -e 'quit app "Safari.app"'; fi
         fi
     fi
 fi
@@ -81,7 +81,7 @@ case ${shikigva} in
 *   )  danger_applet="no"
 esac
 
-osascript -e 'tell application "Terminal" to activate'
+#osascript -e 'tell application "Terminal" to activate'
 
 # MAIN
 while true

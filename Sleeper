@@ -217,7 +217,7 @@ printf "\033[?25l"
 CHECK_Euthanasia(){
 
 if [[ $loc = "ru" ]]; then
-if [[ $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then  rs_lan="работает"  
+if [[ $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then  rs_lan="работает"
         else
 if [[ ! -f /System/Library/LaunchDaemons/Euthanasia.plist ]]; then rs_lan="не установлен"
             else
