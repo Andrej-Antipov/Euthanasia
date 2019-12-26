@@ -7,8 +7,6 @@ fi
 
 cd "$(dirname "$0")"
 
-say "сервис перезапуска сервиса авто сна запущен"
-
 while true; do
 
 sleep 1800
@@ -19,7 +17,6 @@ if [[ ! -f timer.txt ]]; then
             echo "${mypassword}" | sudo -Sk launchctl unload -w /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
             sleep o.5
             echo "${mypassword}" | sudo -Sk launchctl load -w /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
-            say "сервис авто сна был перезапущен"
     fi
 
 fi
