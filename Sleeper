@@ -1,32 +1,6 @@
 #!/bin/bash
 
-
-clear && printf '\e[3J' && printf '\033[0;0H'
-
-osascript -e "tell application \"Terminal\" to set the font size of window 1 to 12"
-osascript -e "tell application \"Terminal\" to set background color of window 1 to {1028, 12850, 10240}"
-osascript -e "tell application \"Terminal\" to set normal text color of window 1 to {65535, 65535, 65535}"
-
-MyTTY=`tty | tr -d " dev/\n"`
-term=`ps`;  MyTTYcount=`echo $term | grep -Eo $MyTTY | wc -l | tr - " \t\n"`
-
-lines=24
-printf '\e[8;'${lines}';80t' && printf '\e[3J' && printf "\033[0;0H"
-
-printf "\033[?25l"
-
-if [[ $loc = "ru" ]]; then
-printf '\e[2m****************** \e[0m\e[36mПрограмма управления сервисом Euthanasia\e[0m\e[2m *******************\e[0m\n'
-else
-printf '\e[2m****************** \e[0m\e[36m Euthanasia Service Management Program  \e[0m\e[2m *******************\e[0m\n'
-fi
-
-cd "$(dirname "$0")"; ROOT="$(dirname "$0")"
-
-if [[ ! -d ~/Library/LaunchAgents ]]; then mkdir ~/Library/LaunchAgents; fi
-
-loc=`defaults read -g AppleLocale | cut -d "_" -f1`
-if [[ ! $loc = "ru" ]]; then loc="en"; fi 
+osascript -e 'tell application "Terminal" to set visible of (every window whose name contains "Sleeper") to false'
 
 CHECK_TTY_COUNT(){
 term=`ps`
@@ -41,7 +15,6 @@ if [[ -f ~/.zsh_history ]]; then cat  ~/.zsh_history | sed -n '/Sleeper/!p' >> ~
 #####################################################################################################################
 CHECK_TTY_COUNT	
 
-kill $(ps  | grep -v grep | grep Euthanasia | rev | awk '{print $NF}' | rev)  2>/dev/null & 
 if [[ ${TTYcount} = 0  ]];then  osascript -e 'tell application "Terminal" to close (every window whose name contains "Sleeper")' && osascript -e 'quit app "terminal.app"' & exit
 else
    osascript -e 'tell application "Terminal" to close (every window whose name contains "Sleeper")' & exit
@@ -141,22 +114,6 @@ fi
 fi
 }
 
-CLEAR_PLACE(){
-
-                    printf "\033[H"
-                    printf "\033['$free_lines';0f"
-                    printf ' %.0s' {1..80}
-                    printf ' %.0s' {1..80}
-                    printf ' %.0s' {1..80}
-                    printf ' %.0s' {1..80}
-                    printf ' %.0s' {1..80}
-                    printf ' %.0s' {1..80}
-                    printf ' %.0s' {1..80}
-                    printf ' %.0s' {1..80}
-                    printf ' %.0s' {1..80}
-                    printf '\r\033[9A'
-
-}
 
 SET_INPUT(){
 
@@ -187,102 +144,6 @@ fi
 
 }
 
-GET_INPUT(){
-unset inputs
-old_rs_lan="${rs_lan}"
-SET_INPUT
-while [[ ! ${inputs} =~ ^[0-4qQa]+$ ]]; do
-printf "\033[?25l"
-if [[ $loc = "ru" ]]; then             
-printf '  Введите символ от \e[1;33m1\e[0m до \e[1;36m4\e[0m, (или \e[1;35mQ\e[0m - выход ):   ' ; printf '                             '
-else
-printf '  Enter a number from \e[1;33m1\e[0m to \e[1;36m4\e[0m, (or \e[1;35mQ\e[0m - exit ):  ' ; printf '                            '
-fi			
-printf "%"80"s"'\n'"%"80"s"'\n'"%"80"s"'\n'"%"80"s"
-printf "\033[4A"
-printf "\r\033[46C"
-printf "\033[?25h"
-CHECK_Euthanasia 2>/dev/null
-if [[ "${rs_lan}" = "${old_rs_lan}" ]]; then
-read -rsn1 -t2 inputs
-else 
-old_rs_lan="${rs_lan}"; inputs=0
-fi 
-printf "\r"
-done
-printf "\033[?25l"
-
-}
-
-CHECK_Euthanasia(){
-
-if [[ $loc = "ru" ]]; then
-if [[ $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then  rs_lan="работает"
-        else
-if [[ ! -f /System/Library/LaunchDaemons/Euthanasia.plist ]]; then rs_lan="не установлен"
-            else
-                 rs_lan="остановлен"
-        fi 
-fi
-else
-if [[ $(echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then  rs_lan="started" 
-        else
-if [[ ! -f /System/Library/LaunchDaemons/Euthanasia.plist ]]; then rs_lan="not installed"
-            else
-                 rs_lan="stopped"
-        fi
-fi
-fi
-}
-
-SHOW_MENU(){
-
-CHECK_Euthanasia 2>/dev/null
-
-free_lines=16
-
-printf '\e[8;'${lines}';80t' && printf '\e[3J' && printf "\033[0;0H"
-if [[ $loc = "ru" ]]; then
-printf '\e[2m****************** \e[0m\e[36mПрограмма управления сервисом Euthanasia\e[0m\e[2m *******************\e[0m\n'
-else
-printf '\e[2m****************** \e[0m\e[36m Euthanasia Service Management Program  \e[0m\e[2m *******************\e[0m\n'
-fi
-printf ' %.0s' {1..80}
-printf '.%.0s' {1..80}
-printf ' %.0s' {1..80}
-if [[ $loc = "ru" ]]; then
-        if [[ $rs_lan = "работает" ]]; then
-        printf '               \e[1;32m           Сервис \e[0mEuthanasia  \e[1;32m'"$rs_lan"'\e[0m                \n'
-        else
-        printf '               \e[1;33m           Сервис \e[0mEuthanasia  \e[1;33m'"$rs_lan"'\e[0m                \n'
-        fi
-else
-        if [[ $rs_lan = "started" ]]; then
-        printf '               \e[1;32m           Service \e[0mEuthanasia  \e[1;32m'"$rs_lan"'\e[0m               \n'
-        else
-        printf '               \e[1;33m           Service \e[0mEuthanasia  \e[1;33m'"$rs_lan"'\e[0m               \n'
-        fi
-fi
-printf ' %.0s' {1..80}
-printf '.%.0s' {1..80}
-printf '\n'
-printf ' %.0s' {1..80}
-if [[ $loc = "ru" ]]; then
-    printf '          \e[1;33m1.\e[0m Установить сервис Euthanasia                \n'
-    printf '          \e[1;33m2.\e[0m Остановить сервис                  \n'
-    printf '          \e[1;33m3.\e[0m Запустить сервис                \n'
-    printf '          \e[1;33m4.\e[0m Удалить сервис Euthanasia                   \n' 
-    printf '          \e[1;35mQ.\e[0m Выйти из программы настройки       \n'
-else
-    printf '          \e[1;33m1.\e[0m Install Euthanasia service                  \n'
-    printf '          \e[1;33m2.\e[0m Stop the service                            \n'
-    printf '          \e[1;33m3.\e[0m Start the service                           \n'
-    printf '          \e[1;33m4.\e[0m Remove Euthanasia service                   \n'
-    printf '          \e[1;35mQ.\e[0m Exit the program                   \n'
-fi
-printf ' %.0s' {1..80}
-}
-
 MESSAGE_START(){
         if [[ $loc = "ru" ]]; then
         SUBTITLE="Сервис усыпления компа ЗАПУЩЕН "
@@ -300,11 +161,11 @@ MESSAGE_STOP(){
         if [[ $loc = "ru" ]]; then
         SUBTITLE="Сервис усыпления компа ОСТАНОВЛЕН "
         MESSAGE=" "
-        DISPLAY_NOTIFICATION &
+        DISPLAY_NOTIFICATION 
         else
         SUBTITLE="Service Euthanasia STOPPED"
         MESSAGE=" "
-        DISPLAY_NOTIFICATION &
+        DISPLAY_NOTIFICATION 
         fi
 }
 
@@ -313,153 +174,57 @@ MESSAGE_STOP(){
 
 # INIT
 
+MyTTY=`tty | tr -d " dev/\n"`
+term=`ps`;  MyTTYcount=`echo $term | grep -Eo $MyTTY | wc -l | tr - " \t\n"`
+cd "$(dirname "$0")"; ROOT="$(dirname "$0")"
+
+if [[ ! -d ~/Library/LaunchAgents ]]; then mkdir ~/Library/LaunchAgents; fi
+
+loc=`defaults read -g AppleLocale | cut -d "_" -f1`
+if [[ ! $loc = "ru" ]]; then loc="en"; fi 
+
 macos=`sw_vers -productVersion`
 macos=`echo ${macos//[^0-9]/}`
 macos=${macos:0:4}
 
+SET_INPUT
 flag=1
-
-free_lines=7
-var4=0
-while [[ ! $var4 = 1 ]] 
-do
-printf '\e[3J' && printf "\033[0;0H" 
-printf "\033[?25l"
-SHOW_MENU
-osascript -e 'tell application "Terminal" to activate'
-#SET_INPUT
 ENTER_PASSWORD
-GET_INPUT
-
-if [[ "$macos" = "1015" ]]; then sudo mount -uw / ; fi
-
-if [[ $inputs = 0 ]]; then
-            CLEAR_PLACE
-            CHECK_Euthanasia
-fi
-
-if [[ $inputs = 1 ]]; then
-            CLEAR_PLACE
-            CHECK_Euthanasia
 if [[ ! "${mypassword}" = "0" ]]; then 
-                if [[ $loc = "ru" ]]; then
-            if [[ ! $rs_lan = "остановлен" ]] || [[ ! $rs_lan = "работает" ]]; then
-            if [[ -f tools/Euthanasia.plist ]] && [[ -f tools/Euthanasia.sh ]]; then
-                if [[ ! -f /System/Library/LaunchDaemons/Euthanasia.plist ]]; then sudo cp -a tools/Euthanasia.plist /System/Library/LaunchDaemons; fi 2>/dev/null
+
+           if [[ "$macos" = "1015" ]]; then sudo mount -uw / ; fi
+
+           if [[ ! $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" 2>/dev/null) ]]; then 
+
+                sudo cp -a tools/Euthanasia.plist /System/Library/LaunchDaemons 2>/dev/null
                 sudo chown root:wheel /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
                 sudo chmod 755 /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
                 sudo plutil -remove ProgramArguments.0 /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
                 sudo plutil -insert ProgramArguments.0 -string "/Users/$(whoami)/Library/Application Support/Euthanasia/.Euthanasia.sh" /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
                 if [[ ! -d ~/Library/Application\ Support/Euthanasia ]]; then mkdir ~/Library/Application\ Support/Euthanasia ; fi
-#               cp -a tools/terminal-notifier.app ~/Library/Application\ Support/Euthanasia
-                if [[ ! -f ~/Library/Application\ Support/Euthanasia/.Euthanasia.sh ]]; then cp -a tools/Euthanasia.sh ~/Library/Application\ Support/Euthanasia/.Euthanasia.sh; sudo chmod u+x ~/Library/Application\ Support/Euthanasia/.Euthanasia.sh; fi 2>/dev/null
-                if [[ ! $rs_lan = "работает" ]]; then sudo launchctl load -w /System/Library/LaunchDaemons/Euthanasia.plist; fi 2>/dev/null
+                cp -a tools/Euthanasia.sh ~/Library/Application\ Support/Euthanasia/.Euthanasia.sh
+                sudo chmod u+x ~/Library/Application\ Support/Euthanasia/.Euthanasia.sh 2>/dev/null
+                sudo launchctl load -w /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
                 if [[ $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then MESSAGE_START; fi  2>/dev/null
                 cp AppIcon.icns ~/Library/Application\ Support/Euthanasia/.EuthIcon.icns; echo "ru" >> ~/Library/Application\ Support/Euthanasia/.SleeperLang.txt
-                if [[ -f tools/RestartEuthanasia.sh ]]; then 
-                    cp tools/RestartEuthanasia.sh ~/Library/Application\ Support/Euthanasia/RestartEuthanasia.sh
-                    cp tools/RestartEuthanasia.plist ~/Library/LaunchAgents/RestartEuthanasia.plist
-                    plutil -remove ProgramArguments.0 ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
-                    plutil -insert ProgramArguments.0 -string "/Users/$(whoami)/Library/Application Support/Euthanasia/RestartEuthanasia.sh" ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
-                    launchctl load -w ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
-                fi
-           else
-                printf '\n   Не найдены файлы для установки. Поместите их в папку tools с установщиком\n'
-                printf '\n'
-        
-          fi
-    fi
-            
- else
-            if [[ ! $rs_lan = "stopped" ]] || [[ ! $rs_lan = "started" ]]; then
-            if [[ -f tools/Euthanasia.plist ]] && [[ -f tools/Euthanasia.sh ]]; then
-                if [[ ! -f /System/Library/LaunchDaemons/Euthanasia.plist ]]; then sudo cp -a tools/Euthanasia.plist /System/Library/LaunchDaemons; fi 2>/dev/null
-                sudo chown root:wheel /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
-                sudo chmod 755 /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
-                sudo plutil -remove ProgramArguments.0 /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
-                sudo plutil -insert ProgramArguments.0 -string "/Users/$(whoami)/.Euthanasia.sh" /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
-                if [[ ! -d ~/Library/Application\ Support/Euthanasia ]]; then mkdir ~/Library/Application\ Support/Euthanasia ; fi
-                if [[ ! -f ~/Library/Application\ Support/Euthanasia/.Euthanasia.sh ]]; then cp -a tools/Euthanasia.sh ~/Library/Application\ Support/Euthanasia/.Euthanasia.sh; sudo chmod u+x ~/Library/Application\ Support/Euthanasia/.Euthanasia.sh; fi 2>/dev/null
-                if [[ ! $rs_lan = "started" ]]; then sudo launchctl load -w /System/Library/LaunchDaemons/Euthanasia.plist; fi 2>/dev/null
-                if [[ $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then MESSAGE_START; fi  2>/dev/null
-                cp AppIcon.icns ~/Library/Application\ Support/Euthanasia/.EuthIcon.icns; echo "en" >> ~/Library/Application\ Support/Euthanasia/.SleeperLang.txt
-                if [[ -f tools/RestartEuthanasia.sh ]]; then 
-                    cp tools/RestartEuthanasia.sh ~/Library/Application\ Support/Euthanasia/RestartEuthanasia.sh
-                    cp tools/RestartEuthanasia.plist ~/Library/LaunchAgents/RestartEuthanasia.plist
-                    plutil -remove ProgramArguments.0 ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
-                    plutil -insert ProgramArguments.0 -string "/Users/$(whoami)/Library/Application Support/Euthanasia/RestartEuthanasia.sh" ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
-                    launchctl load -w ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
-                fi
-           else
-                printf '\n   No installation files found. Put them in the installer tools folder      \n'
-                printf '\n'
-        
-          fi
-        fi
+                cp tools/RestartEuthanasia.sh ~/Library/Application\ Support/Euthanasia/RestartEuthanasia.sh
+                cp tools/RestartEuthanasia.plist ~/Library/LaunchAgents/RestartEuthanasia.plist
+                plutil -remove ProgramArguments.0 ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
+                plutil -insert ProgramArguments.0 -string "/Users/$(whoami)/Library/Application Support/Euthanasia/RestartEuthanasia.sh" ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
+                launchctl load -w ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
 
-    fi
- fi
+            else
 
-read -n 1 -t 1
-CLEAR_PLACE
+               sudo launchctl unload -w /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
+               sudo rm -f /System/Library/LaunchDaemons/Euthanasia.plist
+               launchctl unload -w ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
+               rm -f ~/Library/LaunchAgents/RestartEuthanasia.plist
+               rm -Rf ~/Library/Application\ Support/Euthanasia
+               MESSAGE_STOP
+            fi
+
 fi
 
-
-if [[ $inputs = 2 ]]; then
-    CHECK_Euthanasia
-    if [[ $loc = "ru" ]]; then
-        if [[ $rs_lan = "работает" ]]; then
-        if [[ -f /System/Library/LaunchDaemons/Euthanasia.plist ]]; then
-            sudo launchctl unload -w /System/Library/LaunchDaemons/Euthanasia.plist; fi 2>/dev/null
-            if [[ ! $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then MESSAGE_STOP; fi  2>/dev/null
-        fi
-    else
-        if [[ $rs_lan = "started" ]]; then
-        if [[ -f /System/Library/LaunchDaemons/Euthanasia.plist ]]; then
-            sudo launchctl unload -w /System/Library/LaunchDaemons/Euthanasia.plist; fi 2>/dev/null
-            if [[ ! $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then MESSAGE_STOP; fi  2>/dev/null
-        fi
-    fi
-    CLEAR_PLACE
-fi
-
-if [[ $inputs = 3 ]]; then
-     CHECK_Euthanasia
-    if [[ $loc = "ru" ]]; then
-        if [[ $rs_lan = "остановлен" ]]; then
-        if [[ -f /System/Library/LaunchDaemons/Euthanasia.plist ]]; then
-            sudo launchctl load -w /System/Library/LaunchDaemons/Euthanasia.plist; fi 2>/dev/null
-            if [[ $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then MESSAGE_START; fi  2>/dev/null
-        fi
-     else
-        if [[ $rs_lan = "stopped" ]]; then
-        if [[ -f /System/Library/LaunchDaemons/Euthanasia.plist ]]; then
-            sudo launchctl load -w /System/Library/LaunchDaemons/Euthanasia.plist; fi 2>/dev/null
-            if [[ $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then MESSAGE_START; fi   2>/dev/null
-        fi
-    fi
-    CLEAR_PLACE
-fi
-
-if [[ $inputs = 4 ]]; then
-    CHECK_Euthanasia
-    if [[ $(echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job") ]]; then sudo launchctl unload -w /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null; fi
-    if [[ ! $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then MESSAGE_STOP; fi  2>/dev/null
-    if [[ -f /System/Library/LaunchDaemons/Euthanasia.plist ]]; then sudo rm -f /System/Library/LaunchDaemons/Euthanasia.plist; fi
-    launchctl unload -w ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
-    rm -f ~/Library/LaunchAgents/RestartEuthanasia.plist
-    rm -Rf ~/Library/Application\ Support/Euthanasia
-    read -n 1 -t 1
-    CLEAR_PLACE
-fi
-
-if [[ $inputs = [qQ] ]]; then
-    break
-fi
-
-done
-
-clear
 
 EXIT_PROGRAM
 
