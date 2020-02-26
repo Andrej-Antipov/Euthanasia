@@ -31,7 +31,7 @@ fi
 
 
 DISPLAY_NOTIFICATION(){
-"${ROOT}"/tools/terminal-notifier.app/Contents/MacOS/terminal-notifier -title "Euthanasia" -sound Submarine -subtitle "${SUBTITLE}" -message "${MESSAGE}"
+osascript -e 'display dialog '"${MESSAGE}"'  '"${icon_string}"'  buttons { "OK"}  giving up after 3' >>/dev/null 2>/dev/null
 }
 
 GET_USER_PASSWORD(){
@@ -50,9 +50,9 @@ if (security find-generic-password -a ${USER} -s euthanasia -w) >/dev/null 2>&1;
                 else
                 security delete-generic-password -a ${USER} -s euthanasia >/dev/null 2>&1
                         if [[ $loc = "ru" ]]; then
-                        SUBTITLE="НЕВЕРНЫЙ ПАРОЛЬ УДАЛЁН ИЗ КЛЮЧЕЙ !"; MESSAGE="Подключение разделов EFI НЕ работает"
+                        MESSAGE='"НЕВЕРНЫЙ ПАРОЛЬ УДАЛЁН ИЗ КЛЮЧЕЙ !"'
                         else
-                        SUBTITLE="WRONG PASSWORD REMOVED FROM KEYCHAIN !"; MESSAGE="Mount EFI Partitions NOT Available"
+                        MESSAGE='"WRONG PASSWORD REMOVED FROM KEYCHAIN !"'
                         fi
                         DISPLAY_NOTIFICATION 
                 fi
@@ -61,7 +61,7 @@ fi
 if [[ "$mypassword" = "0" ]] || [[ "$1" = "force" ]]; then
   if [[ $flag = 1 ]]; then 
         
-        TRY=3; GET_APP_ICON
+        TRY=3
         while [[ ! $TRY = 0 ]]; do
         if [[ $loc = "ru" ]]; then
         if PASSWORD="$(osascript -e 'Tell application "System Events" to display dialog "       Пароль для сервиса сна: " '"${icon_string}"' with hidden answer  default answer ""' -e 'text returned of result')"; then cansel=0; else cansel=1; fi 2>/dev/null
@@ -75,9 +75,9 @@ if [[ "$mypassword" = "0" ]] || [[ "$1" = "force" ]]; then
                 if echo "${mypassword}" | sudo -Sk printf '' 2>/dev/null; then
                     security add-generic-password -a ${USER} -s euthanasia -w "${mypassword}" >/dev/null 2>&1
                         if [[ $loc = "ru" ]]; then
-                        SUBTITLE="ПАРОЛЬ СОХРАНЁН В СВЯЗКЕ КЛЮЧЕЙ !"; MESSAGE=""
+                        MESSAGE='"ПАРОЛЬ СОХРАНЁН В СВЯЗКЕ КЛЮЧЕЙ !"'
                         else
-                        SUBTITLE="PASSWORD KEEPED IN KEYCHAIN !"; MESSAGE=""
+                        MESSAGE='"PASSWORD KEEPED IN KEYCHAIN !"'
                         fi
                         DISPLAY_NOTIFICATION
                         break
@@ -87,11 +87,11 @@ if [[ "$mypassword" = "0" ]] || [[ "$1" = "force" ]]; then
                             if [[ $loc = "ru" ]]; then
                         if [[ $TRY = 2 ]]; then ATTEMPT="ПОПЫТКИ"; LAST="ОСТАЛОСЬ"; fi
                         if [[ $TRY = 1 ]]; then ATTEMPT="ПОПЫТКА"; LAST="ОСТАЛАСЬ"; fi
-                        SUBTITLE="НЕВЕРНЫЙ ПАРОЛЬ. $LAST $TRY $ATTEMPT !"; MESSAGE="Для сервиса сна нужен пароль"
+                        MESSAGE='"НЕВЕРНЫЙ ПАРОЛЬ. '$LAST' '$TRY' '$ATTEMPT' !\nДля сервиса сна нужен пароль"'
                             else
                         if [[ $TRY = 2 ]]; then ATTEMPT="ATTEMPTS"; fi
                         if [[ $TRY = 1 ]]; then ATTEMPT="ATTEMPT"; fi
-                        SUBTITLE="INCORRECT PASSWORD. LEFT $TRY $ATTEMPT !"; MESSAGE="Password required for sleep service"
+                        MESSAGE='"INCORRECT PASSWORD. LEFT '$TRY' '$ATTEMPT' !\nPassword required for sleep service"'
                             fi
                 DISPLAY_NOTIFICATION
                 fi
@@ -103,11 +103,11 @@ if (security find-generic-password -a ${USER} -s euthanasia -w) >/dev/null 2>&1;
 fi
             if [[ "$mypassword" = "0" ]]; then
                     if [[ $loc = "ru" ]]; then
-               SUBTITLE="ПАРОЛЬ НЕ ПОЛУЧЕН !"; MESSAGE=""
+               MESSAGE='"ПАРОЛЬ НЕ ПОЛУЧЕН !"'
                     else
-               SUBTITLE="PASSWORD NOT KEEPED IN KEYCHAIN !"; MESSAGE=""
+               MESSAGE='"PASSWORD NOT KEEPED IN KEYCHAIN !"'
                     fi
-                DISPLAY_NOTIFICATION
+               DISPLAY_NOTIFICATION
                 
         fi
     fi
@@ -146,25 +146,20 @@ fi
 
 MESSAGE_START(){
         if [[ $loc = "ru" ]]; then
-        SUBTITLE="Сервис усыпления компа ЗАПУЩЕН "
-        MESSAGE=" "
-        DISPLAY_NOTIFICATION &
+        MESSAGE='"Сервис усыпления компа ЗАПУЩЕН"'
+        DISPLAY_NOTIFICATION 
         else
-        SUBTITLE="Service Euthanasia STARTED"
-        MESSAGE=" "
-        DISPLAY_NOTIFICATION &
+        MESSAGE='"Service Euthanasia STARTED"'
+        DISPLAY_NOTIFICATION 
         fi
-DISPLAY_NOTIFICATION
 }
 
 MESSAGE_STOP(){
         if [[ $loc = "ru" ]]; then
-        SUBTITLE="Сервис усыпления компа ОСТАНОВЛЕН "
-        MESSAGE=" "
+        MESSAGE='"Сервис усыпления компа ОСТАНОВЛЕН"'
         DISPLAY_NOTIFICATION 
         else
-        SUBTITLE="Service Euthanasia STOPPED"
-        MESSAGE=" "
+        MESSAGE='"Service Euthanasia STOPPED"'
         DISPLAY_NOTIFICATION 
         fi
 }
@@ -189,6 +184,7 @@ macos=${macos:0:4}
 
 SET_INPUT
 flag=1
+GET_APP_ICON
 ENTER_PASSWORD
 if [[ ! "${mypassword}" = "0" ]]; then 
 
