@@ -147,21 +147,19 @@ fi
 MESSAGE_START(){
         if [[ $loc = "ru" ]]; then
         MESSAGE='"Сервис усыпления компа ЗАПУЩЕН"'
-        DISPLAY_NOTIFICATION 
         else
         MESSAGE='"Service Euthanasia STARTED"'
-        DISPLAY_NOTIFICATION 
         fi
+DISPLAY_NOTIFICATION
 }
 
 MESSAGE_STOP(){
         if [[ $loc = "ru" ]]; then
         MESSAGE='"Сервис усыпления компа ОСТАНОВЛЕН"'
-        DISPLAY_NOTIFICATION 
         else
         MESSAGE='"Service Euthanasia STOPPED"'
-        DISPLAY_NOTIFICATION 
         fi
+DISPLAY_NOTIFICATION
 }
 
 
