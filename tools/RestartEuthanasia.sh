@@ -9,13 +9,13 @@ cd "$(dirname "$0")"
 
 while true; do
 
-sleep 1800
+sleep 10801
 
 if [[ ! -f timer.txt ]]; then
 
     if [[ $( echo "${mypassword}" | sudo -Sk launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then
             echo "${mypassword}" | sudo -Sk launchctl unload -w /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
-            sleep o.5
+            sleep 0.5
             echo "${mypassword}" | sudo -Sk launchctl load -w /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
     fi
 
