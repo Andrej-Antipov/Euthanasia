@@ -1,5 +1,5 @@
 # Euthanasia
-Correct auto sleep by timer for Mac OS 10.14.6 - 10.15.2+
+Correct auto sleep by timer for Mac OS 10.14.6 - 10.15.3+
 
 After service is set up, checks monitor power state, with interval according system power settings, 
 put system to sleep after time interval accordind "System Sleep Timer" settings.
