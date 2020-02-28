@@ -1,0 +1,118 @@
+#!/bin/bash
+
+EXIT_PROGRAM(){
+################################## очистка на выходе #############################################################
+cat  ~/.bash_history | sed -n '/PMWatcher2/!p' >> ~/new_hist.txt; rm -f ~/.bash_history; mv ~/new_hist.txt ~/.bash_history >/dev/null 2>/dev/null
+cat  ~/.zsh_history | sed -n '/PMWatcher2/!p' >> ~/new_z_hist.txt; rm -f ~/.zsh_history; mv ~/new_z_hist.txt ~/.zsh_history >/dev/null 2>/dev/null
+#####################################################################################################################
+term=`ps`
+AllTTYcount=`echo $term | grep -Eo ttys[0-9][0-9][0-9] | wc -l | tr - " \t\n"`
+let "TTYcount=AllTTYcount-MyTTYcount"
+
+if [[ ${TTYcount} = 1  ]];then  osascript -e 'tell application "Terminal" to close (every window whose name contains "PMWatcher2")' && osascript -e 'quit app "terminal.app"' & exit
+else
+  osascript -e 'tell application "Terminal" to close (every window whose name contains "PMWatcher2")' & exit
+ fi
+
+}
+
+MyTTY=`tty | tr -d " dev/\n"`
+term=`ps`;  MyTTYcount=`echo $term | grep -Eo $MyTTY | wc -l | tr - " \t\n"`
+
+c=$1
+
+if [[ $c = "--help" ]] || [[ $c = "-h" ]]; then 
+        clear && printf '\e[8;10;80t' && printf '\e[3J' && printf "\033[H"
+        echo
+        echo "to make log press l button in programm window"
+        echo "log file will be ~/Desktop/PMWatcher.txt"
+        echo
+
+fi
+  
+clear && printf '\e[8;4;36t' && printf '\e[3J' && printf "\033[H"
+osascript -e "tell application \"Terminal\" to set the font size of window 1 to 12"
+osascript -e "tell application \"Terminal\" to set background color of window 1 to {40000, 60000, 40000}"
+osascript -e "tell application \"Terminal\" to set normal text color of window 1 to {65535, 65535, 65535}"
+
+printf "\033[?25l"
+
+cpu_family=$(sysctl -n machdep.cpu.brand_string | grep -)
+if [[ $cpu_family = "" ]]; then cpu_family=0
+ else
+    cpu_family=$(sysctl -n machdep.cpu.brand_string | cut -f2 -d"-" | cut -c1)
+fi
+
+if [[ ! $c = "" ]]; then osascript -e 'tell application "Terminal" to do script "tail -f '$d'"'; fi
+
+clear && printf '\e[3J' && printf "\033[H"
+
+WATCHER(){
+
+while : ; do 
+
+    b=$(echo $(ioreg -c IOHIDSystem | grep HIDIdleTime | cut -f2 -d=)/1000000000 | bc)
+    printf '\e[1;32m\033[1;0f    Current time : \e[1;33m'; echo -n $(date +" %H.%M.%S")
+    printf '\033[4;0f                                 '
+    printf '\e[1;34m\033[4;0f          HID Idle \e[1;35mTIMER \e[1;34m= \e[1;35m'$b'\e[0m     '
+    assert=$(pmset -g assertions )
+    if [[ $(echo "${assert}" | grep -m1 PreventUserIdleSystemSleep | awk '{print $NF}') = 0 ]]; then a="NO"; else a="YES"; fi
+    if [[ $(echo "${assert}" | grep -m1 PreventUserIdleDisplaySleep  | awk '{print $NF}') = 0 ]]; then disp="NO"; else disp="YES"; fi
+    printf '\e[1;34m\033[2;0f    Prevent \e[1;35mSYSTEM\e[1;34m Sleep = \e[1;35m'$a'\e[0m     '
+    printf '\e[1;34m\033[3;0f    Prevent \e[1;35mDISLAY\e[1;34m Sleep = \e[1;35m'$disp'\e[0m     '
+
+    if [[ $c = "--log" ]] || [[ $c = "-l" ]]; then
+        echo -n "Time: " >> "$d"
+        date +" %H.%M.%S" >> "$d"
+        echo "HIDIdleTime: "$b >> "$d"
+        echo "Prevent System Sleep: "$a >> "$d"
+        if [[ "${a}" = "YES" ]]; then e=$( echo "${assert}" | grep PreventUserIdleSystemSleep | sed 's/PreventUserIdleSystemSleep//g' | xargs | sed 's/pid/;pid/g' | tr  ';' '\n' | tail -n +2 ); echo "$e" >> "$d"; fi
+        if [[ "${disp}" = "YES" ]]; then e=$( echo "${assert}" | grep NoDisplaySleepAssertion | xargs | sed 's/pid/;pid/g' | tr  ';' '\n' | tail -n +2 ); echo "$e" >> "$d"; fi
+        echo "" >> "$d"
+    fi
+ sleep 1; done &
+
+main=$!
+
+}
+
+WATCHER
+
+while : ; do
+#read -rsn1 -t1 input
+oldstty=`stty -g`
+stty -icanon -echo min 1 time 0
+input=$( dd bs=1 count=1) 2>&1
+stty "$oldstty"
+if [[ $input = [Ll] ]]; then 
+        unset input
+        kill $main
+        wait $main 2>/dev/null
+        if [[ ${d} = "" ]]; then d="/Users/$(whoami)/Desktop/PMWatcher.txt"; fi
+        if [[ ${c} = "" ]]; then c="-l";  touch "$d"; osascript -e 'tell application "Terminal" to do script "tail -f '$d'"' 
+                elif [[ ! $cpu_family = 0 ]]; then
+                kill $( ps  | grep -v grep | grep -w PMWatcher.txt | rev | awk '{print $NF}' | rev ) && osascript -e 'tell application "Terminal" to close (every window whose name contains "PMWatcher.txt")'; c=""
+                else
+                kill $( ps  | grep -v grep | grep -w PMWatcher.txt | rev | awk '{print $NF}' | rev ) && osascript -e 'tell application "Terminal" to close (every window whose name contains "bash")'; c=""
+        fi
+WATCHER
+fi
+if [[ $input = [Qq] ]]; then 
+        if [[ ! ${c} = "" ]]; then
+            kill $( ps  | grep -v grep | grep -w PMWatcher.txt | rev | awk '{print $NF}' | rev ) 2>/dev/null && osascript -e 'tell application "Terminal" to close (every window whose name contains "PMWatcher.txt")'
+        fi
+        break
+
+fi
+clear && printf '\e[3J' && printf "\033[H"
+done
+
+kill $main 
+wait $main 2>/dev/null
+
+printf "\033[?25h"
+
+EXIT_PROGRAM
+
+fi
+
