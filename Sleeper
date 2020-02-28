@@ -87,11 +87,11 @@ if [[ "$mypassword" = "0" ]] || [[ "$1" = "force" ]]; then
                             if [[ $loc = "ru" ]]; then
                         if [[ $TRY = 2 ]]; then ATTEMPT="ПОПЫТКИ"; LAST="ОСТАЛОСЬ"; fi
                         if [[ $TRY = 1 ]]; then ATTEMPT="ПОПЫТКА"; LAST="ОСТАЛАСЬ"; fi
-                        MESSAGE='"НЕВЕРНЫЙ ПАРОЛЬ. '$LAST' '$TRY' '$ATTEMPT' !\nДля сервиса сна нужен пароль"'
+                        MESSAGE='"НЕВЕРНЫЙ ПАРОЛЬ. '$LAST' '$TRY' '$ATTEMPT' !\n\nДля сервиса сна нужен пароль"'
                             else
                         if [[ $TRY = 2 ]]; then ATTEMPT="ATTEMPTS"; fi
                         if [[ $TRY = 1 ]]; then ATTEMPT="ATTEMPT"; fi
-                        MESSAGE='"INCORRECT PASSWORD. LEFT '$TRY' '$ATTEMPT' !\nPassword required for sleep service"'
+                        MESSAGE='"INCORRECT PASSWORD. LEFT '$TRY' '$ATTEMPT' !\n\nPassword required for sleep service"'
                             fi
                 DISPLAY_NOTIFICATION
                 fi
@@ -103,9 +103,9 @@ if (security find-generic-password -a ${USER} -s euthanasia -w) >/dev/null 2>&1;
 fi
             if [[ "$mypassword" = "0" ]]; then
                     if [[ $loc = "ru" ]]; then
-               MESSAGE='"ПАРОЛЬ НЕ ПОЛУЧЕН !"'
+               MESSAGE='"ПАРОЛЬ НЕ ПОЛУЧЕН !\n\nСервис усыпления не установлен."'
                     else
-               MESSAGE='"PASSWORD NOT KEEPED IN KEYCHAIN !"'
+               MESSAGE='"PASSWORD NOT KEEPED IN KEYCHAIN !\n\nSleep service set aborted."'
                     fi
                DISPLAY_NOTIFICATION
                 
@@ -183,12 +183,19 @@ macos=${macos:0:4}
 SET_INPUT
 flag=1
 GET_APP_ICON
+GET_USER_PASSWORD
+if [[ ! "${mypassword}" = "0" ]]; then
+if ! echo "${mypassword}" | sudo -Sk printf ""  ; then ENTER_PASSWORD "force"; fi
+else
 ENTER_PASSWORD
+fi
 if [[ ! "${mypassword}" = "0" ]]; then 
+
+           echo "${mypassword}" | sudo -S printf ""
 
            if [[ "$macos" = "1015" ]]; then sudo mount -uw / ; fi
 
-           if [[ ! $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" 2>/dev/null) ]]; then 
+           if [[ ! $( sudo launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" 2>/dev/null) ]]; then 
 
                 sudo cp -a tools/Euthanasia.plist /System/Library/LaunchDaemons 2>/dev/null
                 sudo chown root:wheel /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
@@ -201,18 +208,11 @@ if [[ ! "${mypassword}" = "0" ]]; then
                 sudo launchctl load -w /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
                 if [[ $( echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job" ) ]]; then MESSAGE_START; fi  2>/dev/null
                 cp AppIcon.icns ~/Library/Application\ Support/Euthanasia/.EuthIcon.icns; echo "ru" >> ~/Library/Application\ Support/Euthanasia/.SleeperLang.txt
-                cp tools/RestartEuthanasia.sh ~/Library/Application\ Support/Euthanasia/RestartEuthanasia.sh
-                cp tools/RestartEuthanasia.plist ~/Library/LaunchAgents/RestartEuthanasia.plist
-                plutil -remove ProgramArguments.0 ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
-                plutil -insert ProgramArguments.0 -string "/Users/$(whoami)/Library/Application Support/Euthanasia/RestartEuthanasia.sh" ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
-                launchctl load -w ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
 
             else
 
                sudo launchctl unload -w /System/Library/LaunchDaemons/Euthanasia.plist 2>/dev/null
                sudo rm -f /System/Library/LaunchDaemons/Euthanasia.plist
-               launchctl unload -w ~/Library/LaunchAgents/RestartEuthanasia.plist 2>/dev/null
-               rm -f ~/Library/LaunchAgents/RestartEuthanasia.plist
                rm -Rf ~/Library/Application\ Support/Euthanasia
                MESSAGE_STOP
             fi
