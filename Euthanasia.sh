@@ -32,12 +32,6 @@ if (security find-generic-password -a ${USER} -s euthanasia -w) >/dev/null 2>&1;
 fi
 }
 
-GET_APP_ICON(){
-icon_string=""
-if [[ -f .EuthIcon.icns ]]; then 
-   icon_string=' with icon file "'"$(echo "$(diskutil info $(df / | tail -1 | cut -d' ' -f 1 ) |  grep "Volume Name:" | cut -d':'  -f 2 | xargs)")"''"$(echo "${ROOT}" | tr "/" ":" | xargs)"':.EuthIcon.icns"'
-fi 
-}
 
 GO_TO_BED(){
 echo "${mypassword}" | sudo -Sk pmset sleepnow
