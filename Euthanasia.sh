@@ -8,9 +8,9 @@ if [[ "${gpu}" = "AMD" ]] && [[ "$macos" = "1015" ]]; then
         AMDAccel=$( ioreg -c AMDRadeonX4000_AMDAccelDevice  -r | grep IOUserClientCreator )
         TV_pid=$( echo "${AMDAccel}" | grep TV -m 1 | cut -f2 -d= | cut -c 7- | cut -f1 -d ',' )
         Safari_pid=$( echo "${AMDAccel}" | grep Safari -m 1 | cut -f2 -d= | cut -c 7- | cut -f1 -d ',' )
-        if [[ ! ${TV_pid} = "" ]]; then echo "${mypassword}" | sudo -S osascript -e 'quit app "TV.app"'; fi
+        if [[ ! ${TV_pid} = "" ]]; then echo "${mypassword}" | sudo -Sk osascript -e 'quit app "TV.app"'; fi
         if [[ "${danger_applet}" = "safari" ]]; then
-            if [[ ! ${Safari_pid} = "" ]]; then echo "${mypassword}" | sudo -S osascript -e 'quit app "Safari.app"'; fi
+            if [[ ! ${Safari_pid} = "" ]]; then echo "${mypassword}" | sudo -Sk osascript -e 'quit app "Safari.app"'; fi
         fi
     fi
 fi
@@ -40,7 +40,7 @@ fi
 }
 
 GO_TO_BED(){
-echo "${mypassword}" | sudo -S pmset sleepnow
+echo "${mypassword}" | sudo -Sk pmset sleepnow
 }
 
 CHECK_DISPLAY(){ 
@@ -49,11 +49,13 @@ pmset -g powerstate | grep -w IODisplayWrangler | xargs | cut -f2 -d' '
 
 SLEEP_TIMER(){
 if [[ ! ${timer} = ${display} ]]; then 
+    touch timer.txt
     for ((i=0;i<(( ($system-$display)*3));i++))
     do
     sleep 20
-    if [[ $( CHECK_DISPLAY ) = 4 ]]; then br=1; break; else br=0; fi
+    if [[ $( CHECK_DISPLAY ) = 4 ]]; then rm -f timer.txt; break; fi
     done
+    rm -f timer.txt
 fi
 }
 
@@ -79,7 +81,6 @@ case ${shikigva} in
 *   )  danger_applet="no"
 esac
 
-osascript -e 'tell application "Terminal" to activate'
 
 # MAIN
 while true
@@ -87,7 +88,7 @@ while true
         sleep 20
         GET_POWER_SETTINGS
          if [[ ! ${system} = 0 ]]; then        
-            if [[ ! $( CHECK_DISPLAY ) = 4 ]]; then KILL_HAZARDS; SLEEP_TIMER; if [[ ! $( CHECK_DISPLAY ) = 4 ]]; then GO_TO_BED; fi; fi
+            if [[ ! $( CHECK_DISPLAY ) = 4 ]]; then touch timer.txt; KILL_HAZARDS; SLEEP_TIMER; if [[ ! $( CHECK_DISPLAY ) = 4 ]]; then GO_TO_BED; fi; rm -f timer.txt; fi
         fi
     done
 
