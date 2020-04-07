@@ -94,11 +94,11 @@ if [[ "$mypassword" = "0" ]] || [[ "$1" = "force" ]]; then
         TRY=3
         while [[ ! $TRY = 0 ]]; do
         if [[ $loc = "ru" ]]; then
-        if PASSWORD="$(osascript -e 'Tell application "System Events" to display dialog "       Пароль для сервиса сна: " '"${icon_string}"' with hidden answer  default answer ""' -e 'text returned of result')"; then cansel=0; else cansel=1; fi 2&gt;/dev/null
+        if PASSWORD="$(osascript -e 'Tell application "System Events" to display dialog "Для установки сервиса сна нужен пароль!\nОн будет храниться в вашей связке ключей\n\nПользователь:  '"$(id -F)"'\nВведите ваш пароль:" '"${icon_string}"' giving up after (110) with hidden answer  default answer ""' -e 'text returned of result')"; then cansel=0; else cansel=1; fi 2&gt;/dev/null
         else
-        if PASSWORD="$(osascript -e 'Tell application "System Events" to display dialog "       Enter the password for sleep service: " '"${icon_string}"' with hidden answer  default answer ""' -e 'text returned of result')"; then cansel=0; else cansel=1; fi 2&gt;/dev/null
+        if PASSWORD="$(osascript -e 'Tell application "System Events" to display dialog "Password is required to launch sleep service!\nIt will be keeped in your keychain\n\nUser Name:  '"$(id -F)"'\nEnter your password:" '"${icon_string}"' giving up after (110) with hidden answer  default answer ""' -e 'text returned of result')"; then cansel=0; else cansel=1; fi 2&gt;/dev/null
         fi      
-                if [[ $cansel = 1 ]]; then break; fi  
+                if [[ $cansel = 1 ]] || [[ "${PASSWORD}" = "" ]]; then break; fi  
                 mypassword="${PASSWORD}" 
                 if [[ $mypassword = "" ]]; then mypassword="?"; fi
 
@@ -135,7 +135,7 @@ fi
                     if [[ $loc = "ru" ]]; then
                MESSAGE='"ПАРОЛЬ НЕ ПОЛУЧЕН !\n\nСервис усыпления не установлен."'
                     else
-               MESSAGE='"PASSWORD NOT KEEPED IN KEYCHAIN !\n\nSleep service set aborted."'
+               MESSAGE='"PASSWORD NOT KEEPED IN KEYCHAIN !\n\nSleep service setup aborted."'
                     fi
                DISPLAY_NOTIFICATION
                 
@@ -222,7 +222,7 @@ ROOT="$(ps xao command | grep -i "Sleeper" | grep -v grep | grep -v /bin/bash | 
 	GET_APP_ICON
 	NEED_PASSWORD
 	if [[ ${need_password} = 0 ]]; then
-           if [[ "$macos" = "1015" ]]; then sudo mount -uw / ; fi
+           if [[ "$macos" = "1015" ]]; then echo "${mypassword}" | sudo -S mount -uw / ; fi
 		    
 			euth_job_check="$(echo "${mypassword}" | sudo -S launchctl list | grep "Euthanasia.job" | cut -f3 | grep -x "Euthanasia.job")"
            if [[ ! "${euth_job_check}" = "Euthanasia.job" ]]; then
