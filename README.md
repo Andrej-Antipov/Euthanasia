@@ -1,5 +1,5 @@
 # Euthanasia
-Correct auto sleep by timer for Mac OS 10.14.6 - 10.15.3+
+Correct auto sleep by timer for Mac OS 10.14.6 - 12.0
 
 The helper sleep service
 
